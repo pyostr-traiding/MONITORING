@@ -90,4 +90,4 @@ async def api_change_status_position(
                 return False
             return None
 
-print(asyncio.run(api_change_status_position(uuid='str', status='monitoring')))
+# print(asyncio.run(api_change_status_position(uuid='str', status='monitoring')))

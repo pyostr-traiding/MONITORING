@@ -26,7 +26,7 @@ REDIS_CONFIG = {
 }
 REDIS_CHANNELS = ["kline:BTCUSDT"]
 
-API_BASE_URL = "http://" + os.getenv('API_BASE_URL') + '/api'
+API_BASE_URL = "http://" + os.getenv('API_BASE_URL') + ':8000/api'
 
 DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=15)
 

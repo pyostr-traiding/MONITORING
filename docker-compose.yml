@@ -4,7 +4,7 @@ services:
   service:
     build: ./
     container_name: monitoring
-    command: poetry run main.py
+    command: poetry run python main.py
     env_file: ./.env
     restart: always
     volumes:

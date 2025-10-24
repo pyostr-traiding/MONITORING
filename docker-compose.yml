@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  panel:
+    build: ./
+    container_name: admin-panel
+    command: poetry run main.py
+    env_file: ./.env
+    restart: always
+    volumes:
+      - /root/logs/MONITORING/panel:/code/logs/
+    networks:
+      - GLOBAL_NETWORK
+
+
+networks:
+  GLOBAL_NETWORK:
+    external: true

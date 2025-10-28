@@ -1,6 +1,7 @@
 # ==============================================================
 # ФЬЮЧЕРСЫ / ОПЦИОНЫ
 # ==============================================================
+import logging
 from typing import Union
 
 from API.position import api_get_position, api_change_status_position
@@ -8,6 +9,8 @@ from API.schemas.position import PositionSchema
 
 from app.schemas.kline import KlineUpdate
 from app.services.position.services.position_service import BasePositionService
+
+logger = logging.getLogger(__name__)
 
 
 class OptionPositionService(BasePositionService):
@@ -26,9 +29,16 @@ class OptionPositionService(BasePositionService):
 
             # Если позиция в нерабочих статусах (пр. Исполнено)
             if api_position is False:
-                print('Отмена статусом')
+                logger.info(f'Отмена статусом: {position}')
                 return True
-            await self._add_new_option_position(position, current_price)
+                # Принимаем ордер
+            result_accept = await api_change_status_position(
+                uuid=position.uuid,
+                status='monitoring'
+            )
+            if not result_accept:
+                return False
+            await self._add_new_option_position(position, kline)
             return False
 
         # --- Обновляем экстремумы ---
@@ -47,7 +57,7 @@ class OptionPositionService(BasePositionService):
         """
         if position.side == 'buy':
             if float(position.price) <= kline.data.data.h:
-                print('Сделка открыта')
+                logger.info(f'Сделка открыта: {position}')
                 result = await api_change_status_position(
                     uuid=position.uuid,
                     status='completed'
@@ -56,7 +66,7 @@ class OptionPositionService(BasePositionService):
             return False
         if position.side == 'sell':
             if float(position.price) >= kline.data.data.h:
-                print('Сделка открыта')
+                logger.info(f'Сделка открыта: {position}')
                 result = await api_change_status_position(
                     uuid=position.uuid,
                     status='completed'
@@ -83,12 +93,12 @@ class OptionPositionService(BasePositionService):
             min_val = market_min
             max_val = market_max
             await self._create_initial_extremums(pos_uuid, market_close)
-            print(
+            logger.info(
                 f"[INIT] Экстремумы не найдены — установлены по рынку: "
                 f"MIN={market_min}, MAX={market_max}"
             )
         else:
-            print(f"[LOAD] Найдены экстремумы в Redis: MIN={min_val} MAX={max_val}")
+            logger.info(f"[LOAD] Найдены экстремумы в Redis: MIN={min_val} MAX={max_val}")
 
         self._positions[position.id] = {
             "uuid": pos_uuid,
@@ -99,7 +109,7 @@ class OptionPositionService(BasePositionService):
             "min_price": float(min_val),
         }
 
-        print(f"[NEW] {position.symbol_name} ({position.side}) по {position.price}")
+        logger.info(f"[NEW] {position.symbol_name} ({position.side}) по {position.price}")
 
     async def _update_option_extremums(self, position_id: int, current_price: float):
         """
@@ -120,7 +130,7 @@ class OptionPositionService(BasePositionService):
             updated = True
 
         if updated:
-            print(
+            logger.info(
                 f"[UPDATE] {pos['symbol']} ({pos['side']}) | "
                 f"MIN={pos['min_price']:.2f} | MAX={pos['max_price']:.2f}"
             )

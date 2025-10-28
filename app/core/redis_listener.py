@@ -1,9 +1,12 @@
 # app/core/redis_listener.py
 import json
 import asyncio
+import logging
 import time
 from typing import Callable, Dict, List
 import redis.asyncio as aioredis
+
+logger = logging.getLogger(__name__)
 
 
 class RedisListener:
@@ -36,7 +39,7 @@ class RedisListener:
                 self.redis = aioredis.Redis(**self.config, decode_responses=True)
                 self.pubsub = self.redis.pubsub()
                 await self.pubsub.subscribe(*self.channels)
-                print(f"[Redis] Подписан на каналы: {self.channels}")
+                logger.info(f"[Redis] Подписан на каналы: {self.channels}")
 
                 async for raw in self.pubsub.listen():
                     if self._stop.is_set():
@@ -71,7 +74,7 @@ class RedisListener:
                     for cb in self.callbacks.get(channel, []):
                         asyncio.create_task(cb(data))
             except Exception as e:
-                print(f"[Redis] listen error: {e} → reconnect in {self.reconnect_delay}s")
+                logger.error(f"[Redis] listen error: {e} → reconnect in {self.reconnect_delay}s")
                 await asyncio.sleep(self.reconnect_delay)
             finally:
                 try:

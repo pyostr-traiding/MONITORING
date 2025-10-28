@@ -1,8 +1,10 @@
 import json
+import logging
 
 from app.services.position.router import PositionRouter
 from app.triggers.base_trigger import BaseTrigger
-from app.services.position.services.position_service import BasePositionService
+
+logger = logging.getLogger(__name__)
 
 
 class PositionTrigger(BaseTrigger):
@@ -15,11 +17,11 @@ class PositionTrigger(BaseTrigger):
 
     async def handle(self, trigger_data):
         if not self.handler.messages:
-            print("[Trigger:Position] Очередь пуста")
+            logger.info("[Trigger:Position] Очередь пуста")
             return
 
         iterations = len(self.handler)
-        print(f"[Trigger:Position] Обрабатываю {iterations} сообщений")
+        logger.info(f"[Trigger:Position] Обрабатываю {iterations} сообщений")
 
         for _ in range(iterations):
             item = await self.handler.next_message()
@@ -36,12 +38,12 @@ class PositionTrigger(BaseTrigger):
             try:
                 result = await self.service.process(body, trigger_data)
             except Exception as e:
-                print(f"[Trigger:Position] Ошибка обработчика: {e}")
+                logger.error(f"[Trigger:Position] Ошибка обработчика: {e}")
                 result = False
 
             if result:
-                print(f"[Trigger:Position] ✅ Удаляю {body.get('uuid')}")
+                logger.info(f"[Trigger:Position] ✅ Удаляю {body.get('uuid')}")
                 await self.handler.remove_message(item)
             else:
-                print(f"[Trigger:Position] ⏳ Ещё не готово → в конец {body.get('uuid')}")
+                logger.info(f"[Trigger:Position] ⏳ Ещё не готово → в конец {body.get('uuid')}")
                 await self.handler.requeue_message(item)

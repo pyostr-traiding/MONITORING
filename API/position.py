@@ -1,11 +1,14 @@
-import asyncio
+import logging
 
 import aiohttp
 
 from typing import Union, Literal
 
 from API.schemas.position import PositionSchema
-from config import DEFAULT_TIMEOUT, API_BASE_URL, BASE_HEADERS
+from conf.config import DEFAULT_TIMEOUT, API_BASE_URL, BASE_HEADERS
+
+logger = logging.getLogger(__name__)
+
 
 async def api_get_position(
         uuid: str
@@ -45,13 +48,13 @@ async def api_get_list_positions() -> list[dict]:
                 timeout=DEFAULT_TIMEOUT,
         ) as resp:
             if resp.status != 200:
-                print(f"[InitLoader] Ошибка {resp.status} при запросе {url}")
+                logger.error(f"[InitLoader] Ошибка {resp.status} при запросе {url}")
                 return []
             data = await resp.json()
             if not isinstance(data, list):
-                print(f"[InitLoader] Невалидный ответ (ожидался list) с {url}")
+                logger.error(f"[InitLoader] Невалидный ответ (ожидался list) с {url}")
                 return []
-            print(f"[InitLoader] Получено {len(data)} элементов с position/ListOpen")
+            logger.info(f"[InitLoader] Получено {len(data)} элементов с position/ListOpen")
             return data
 
 
@@ -78,8 +81,6 @@ async def api_change_status_position(
                 headers=BASE_HEADERS,
                 timeout=DEFAULT_TIMEOUT,
         ) as resp:
-            print(resp.status)
-            print(await resp.text())
             if resp.status == 200:
                 return True
             if resp.status == 409:
@@ -87,7 +88,5 @@ async def api_change_status_position(
             if resp.status == 404:
                 return False
             if resp.status == 500:
-                return False
+                return None
             return None
-
-# print(asyncio.run(api_change_status_position(uuid='str', status='monitoring')))

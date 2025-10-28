@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal, Any
 
 from pydantic import BaseModel
@@ -17,5 +18,8 @@ class OrderSchema(BaseModel):
     side: Literal['buy', 'sell']
     qty_tokens: str
     price: str
+
+    accumulated_funding: Decimal
+    target_rate: Decimal
 
     created_at: Any

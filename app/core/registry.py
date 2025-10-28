@@ -1,8 +1,11 @@
 # app/core/registry.py
+import logging
 import pkgutil
 import importlib
 import inspect
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def _import_all_modules_from_package(package_name: str):
@@ -19,7 +22,7 @@ def _import_all_modules_from_package(package_name: str):
         try:
             importlib.import_module(full_name)
         except Exception as e:
-            print(f"[Registry] ⚠ Ошибка импорта модуля {full_name}: {e}")
+            logger.error(f"[Registry] ⚠ Ошибка импорта модуля {full_name}: {e}")
 
         # Если внутри подпакет — импортируем рекурсивно
         if is_pkg:
@@ -48,7 +51,7 @@ def load_handlers():
     """Возвращает список всех Handler-классов"""
     from app.handlers.base_handler import BaseHandler
     handlers = discover_subclasses("app.handlers", BaseHandler)
-    print(f"[Registry] Загружено обработчиков: {len(handlers)}")
+    logger.info(f"[Registry] Загружено обработчиков: {len(handlers)}")
     return handlers
 
 
@@ -56,5 +59,5 @@ def load_triggers():
     """Возвращает список всех Trigger-классов"""
     from app.triggers.base_trigger import BaseTrigger
     triggers = discover_subclasses("app.triggers", BaseTrigger)
-    print(f"[Registry] Загружено триггеров: {len(triggers)}")
+    logger.info(f"[Registry] Загружено триггеров: {len(triggers)}")
     return triggers

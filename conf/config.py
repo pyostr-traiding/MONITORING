@@ -7,6 +7,10 @@ import os
 
 import aiohttp
 import redis.asyncio as aioredis
+
+import logging
+import logging.config
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,3 +46,4 @@ redis_server = aioredis.Redis(
     db=3,
     decode_responses=True
 )
+

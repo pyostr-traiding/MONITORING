@@ -1,9 +1,9 @@
 import json
-import uuid
-from typing import Dict, Any, Optional
+import logging
+from typing import Dict, Any
 from datetime import datetime, UTC
 
-from config import redis_server
+from conf.config import redis_server
 
 from API.schemas.order import OrderSchema
 from app.schemas.kline import KlineUpdate
@@ -12,6 +12,9 @@ from app.schemas.kline import KlineUpdate
 # ==============================================================
 # БАЗОВЫЙ КЛАСС
 # ==============================================================
+
+logger = logging.getLogger(__name__)
+
 
 class BaseOrderService:
     def __init__(self):
@@ -34,7 +37,7 @@ class BaseOrderService:
         elif order.category == "spot":
             return await self._handle_spot(order, kline)
         else:
-            print(f"[SKIP] Неизвестная категория: {order.category}")
+            logger.error(f"[SKIP] Неизвестная категория: {order.category}")
             return False
 
     # --- Методы, которые переопределяются в наследниках ---

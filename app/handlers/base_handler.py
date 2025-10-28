@@ -1,5 +1,9 @@
 import asyncio
 import json
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class BaseHandler:
     def __init__(self):
@@ -24,14 +28,14 @@ class BaseHandler:
             if uuid:
                 # 🔸 Проверяем, нет ли уже такого uuid в очереди
                 if any(m["body"].get("uuid") == uuid for m in self.messages):
-                    print(f"[Handler:{self.__class__.__name__}] 🔁 Пропускаю дубликат uuid={uuid}")
+                    logger.info(f"[Handler:{self.__class__.__name__}] 🔁 Пропускаю дубликат uuid={uuid}")
                     if msg:
                         await msg.ack()  # подтверждаем получение, чтобы не висело в Rabbit
                     return
 
             # 🔸 Добавляем в локальную очередь
             self.messages.append({"msg": msg, "body": body})
-            print(f"[Handler:{self.__class__.__name__}] Добавлено сообщение: {body}")
+            logger.info(f"[Handler:{self.__class__.__name__}] Добавлено сообщение: {body}")
 
             # 🔹 Подтверждаем RabbitMQ, если есть msg
             if msg:

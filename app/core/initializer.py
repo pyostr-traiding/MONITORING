@@ -1,3 +1,5 @@
+import logging
+
 import aiohttp
 import asyncio
 
@@ -5,6 +7,8 @@ from API.orders import api_get_list_orders
 from API.position import api_get_list_positions
 
 DEFAULT_TIMEOUT = aiohttp.ClientTimeout(total=15)
+
+logger = logging.getLogger(__name__)
 
 
 async def process_positions_data(data_list: list[dict]) -> list[dict]:
@@ -14,7 +18,7 @@ async def process_positions_data(data_list: list[dict]) -> list[dict]:
         if item.get("status") in ["cancel", "completed"]:
             continue
         processed.append(item)
-    print(f"[InitLoader] Отфильтровано позиций: {len(processed)} из {len(data_list)}")
+    logger.info(f"[InitLoader] Отфильтровано позиций: {len(processed)} из {len(data_list)}")
     return processed
 
 
@@ -26,7 +30,7 @@ async def process_orders_data(data_list: list[dict]) -> list[dict]:
             continue
         item["full_symbol"] = f"{item.get('symbol', '').upper()}_{item.get('side', '').upper()}"
         processed.append(item)
-    print(f"[InitLoader] Отфильтровано ордеров: {len(processed)} из {len(data_list)}")
+    logger.info(f"[InitLoader] Отфильтровано ордеров: {len(processed)} из {len(data_list)}")
     return processed
 
 

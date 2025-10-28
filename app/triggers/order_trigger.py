@@ -1,7 +1,10 @@
 import json
+import logging
 
 from app.services.order.router import OrderRouter
 from app.triggers.base_trigger import BaseTrigger
+
+logger = logging.getLogger(__name__)
 
 
 class OrderTrigger(BaseTrigger):
@@ -14,11 +17,11 @@ class OrderTrigger(BaseTrigger):
 
     async def handle(self, trigger_data):
         if not self.handler.messages:
-            print("[Trigger:Order] Очередь пуста")
+            logger.info("[Trigger:Order] Очередь пуста")
             return
 
         iterations = len(self.handler)
-        print(f"[Trigger:Order] Обрабатываю {iterations} сообщений")
+        logger.info(f"[Trigger:Order] Обрабатываю {iterations} сообщений")
 
         for _ in range(iterations):
             item = await self.handler.next_message()
@@ -35,12 +38,12 @@ class OrderTrigger(BaseTrigger):
             try:
                 result = await self.service.process(body, trigger_data)
             except Exception as e:
-                print(f"[Trigger:Order] Ошибка обработчика: {e}")
+                logger.error(f"[Trigger:Order] Ошибка обработчика: {e}")
                 result = False
 
             if result:
-                print(f"[Trigger:Order] ✅ Удаляю {body.get('uuid')}")
+                logger.info(f"[Trigger:Order] ✅ Удаляю {body.get('uuid')}")
                 await self.handler.remove_message(item)
             else:
-                print(f"[Trigger:Order] ⏳ Ещё не готово → в конец {body.get('uuid')}")
+                logger.info(f"[Trigger:Order] ⏳ Ещё не готово → в конец {body.get('uuid')}")
                 await self.handler.requeue_message(item)

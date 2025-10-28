@@ -1,5 +1,10 @@
+import logging
+
 from app.services.order.services.option import OptionOrderService
 from app.services.order.services.spot import SpotOrderService
+
+logger = logging.getLogger(__name__)
+
 
 class OrderRouter:
     def __init__(self):
@@ -14,5 +19,5 @@ class OrderRouter:
         elif category == "spot":
             return await self.spot_service.process(position_dict, trigger_data)
         else:
-            print(f"[Router] Неизвестная категория: {category}")
+            logger.error(f"[Router] Неизвестная категория: {category}")
             return False

@@ -3,7 +3,7 @@ import uuid
 from typing import Dict, Any, Optional
 from datetime import datetime, UTC
 
-from config import redis_server
+from conf.config import redis_server
 from API.schemas.position import PositionSchema
 from app.schemas.kline import KlineUpdate
 
@@ -33,7 +33,7 @@ class BasePositionService:
         elif position.category == "spot":
             return await self._handle_spot(position, kline)
         else:
-            print(f"[SKIP] Неизвестная категория: {position.category}")
+            print(f"[SKIP] Неизвестная категория: {position.category} | {position}")
             return False
 
     # --- Методы, которые переопределяются в наследниках ---

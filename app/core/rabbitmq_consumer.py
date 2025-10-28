@@ -1,7 +1,12 @@
-import asyncio
 from typing import Callable, Dict, List, Optional
 
+import asyncio
+import json
+import logging
+
 import aio_pika
+
+logger = logging.getLogger(__name__)
 
 
 class RabbitMQConsumer:
@@ -35,12 +40,12 @@ class RabbitMQConsumer:
                 self.connection = await aio_pika.connect_robust(self.url)
                 self.channel = await self.connection.channel()
                 await self.channel.set_qos(prefetch_count=self.prefetch)
-                print(f"[RabbitMQ] Connected (attempt {attempt})")
+                logger.info(f"[RabbitMQ] Connected (attempt {attempt})")
                 return
             except Exception as e:
                 last_exc = e
                 delay = self.reconnect_base_delay * attempt
-                print(f"[RabbitMQ] connect failed ({attempt}/{self.reconnect_attempts}): {e} → retry in {delay:.1f}s")
+                logger.info(f"[RabbitMQ] connect failed ({attempt}/{self.reconnect_attempts}): {e} → retry in {delay:.1f}s")
                 await asyncio.sleep(delay)
         raise RuntimeError(f"RabbitMQ connect failed after {self.reconnect_attempts} attempts: {last_exc}")
 
@@ -58,23 +63,25 @@ class RabbitMQConsumer:
                 """
                 try:
                     body = message.body.decode()
+                    if isinstance(body, str):
+                        body = json.loads(body)
                     cb = self.callbacks.get(q)
                     if cb:
                         # кладём локально (msg=None, т.к. мы подтверждаем сразу)
                         await cb(None, body)
-                        print(f"[RabbitMQ] {q} → {body}")
+                        logger.info(f"[RabbitMQ] {q} → {body}")
                     # подтверждаем немедленно: транспорт освобождаем сразу
                     await message.ack()
                 except Exception as e:
                     # безопаснее nack с requeue, чтобы не потерять при сбое callback
-                    print(f"[RabbitMQ] on_message error, nack requeue: {e}")
+                    logger.error(f"[RabbitMQ] on_message error, nack requeue: {e}")
                     try:
                         await message.nack(requeue=True)
                     except Exception as _:
                         pass  # уже не страшно
 
             await queue.consume(on_message, no_ack=False)
-            print(f"[RabbitMQ] Listening: {q_name}")
+            logger.info(f"[RabbitMQ] Listening: {q_name}")
 
     async def close(self):
         """Аккуратно закрыть соединения."""
@@ -85,4 +92,4 @@ class RabbitMQConsumer:
         finally:
             if self.connection:
                 await self.connection.close()
-        print("[RabbitMQ] Closed")
+        logger.info("[RabbitMQ] Closed")

@@ -41,6 +41,7 @@ async def api_get_list_positions() -> list[dict]:
     Запрашивает список открытых ордеров с API
     """
     url = f"{API_BASE_URL}/position/ListOpen"
+    print(url)
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 url,
@@ -61,7 +62,7 @@ async def api_get_list_positions() -> list[dict]:
 async def api_change_status_position(
         uuid: str,
         status: Literal['monitoring', 'completed', 'cancel'],
-
+        kline_ms: str = None
 ) -> Union[bool, None]:
     """
     Изменение статуса
@@ -72,6 +73,7 @@ async def api_change_status_position(
     data = {
         'uuid': uuid,
         'status': status,
+        'kline_ms': kline_ms,
     }
     url = f"{API_BASE_URL}/position/changeStatus"
     async with aiohttp.ClientSession() as session:

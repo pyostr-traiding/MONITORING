@@ -60,7 +60,8 @@ class OptionPositionService(BasePositionService):
                 logger.info(f'Сделка открыта: {position}')
                 result = await api_change_status_position(
                     uuid=position.uuid,
-                    status='completed'
+                    status='completed',
+                    kline_ms=str(kline.data.data.ts)
                 )
                 return result
             return False
@@ -69,7 +70,8 @@ class OptionPositionService(BasePositionService):
                 logger.info(f'Сделка открыта: {position}')
                 result = await api_change_status_position(
                     uuid=position.uuid,
-                    status='completed'
+                    status='completed',
+                    kline_ms=str(kline.data.data.ts)
                 )
                 return result
             return False

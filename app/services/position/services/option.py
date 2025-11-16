@@ -50,31 +50,56 @@ class OptionPositionService(BasePositionService):
             self,
             position: PositionSchema,
             kline: KlineUpdate
-    ) -> Union[bool, None]:
+    ) -> bool:
         """
-        Считаем имеется ли прибыль
-        Если достигла точки входа - подтвердим позицию в базе и удалим локально
+        Проверяет, достигла ли цена уровня входа.
+        Если достигла — обновляем статус позиции на 'completed'.
+        Панель сама откроет ордер после подтверждения на бирже.
         """
-        if position.side == 'buy':
-            if float(position.price) <= kline.data.data.h:
-                logger.info(f'Сделка открыта: {position}')
+
+        # Извлекаем нужные данные
+        try:
+            price = float(position.price)
+            low = float(kline.data.data.l)
+            high = float(kline.data.data.h)
+            ts = str(kline.data.data.ts)
+        except (AttributeError, ValueError, TypeError) as e:
+            logger.error(f'Ошибка в данных для расчёта: {e}, position={position}, kline={kline}')
+            return False
+
+        # Если уже закрыта или завершена — не трогаем
+        if position.status in ('completed', 'canceled'):
+            logger.debug(f'Пропуск: позиция уже завершена {position.uuid}')
+            return False
+
+        # Проверяем условия входа
+        entered = False
+        side = position.side.lower()
+
+        # Для покупки: цена входа попадает в диапазон свечи
+        if side == 'buy' and low <= price <= high:
+            entered = True
+
+        # Для продажи: то же, диапазон свечи "задел" цену входа
+        elif side == 'sell' and low <= price <= high:
+            entered = True
+
+        # Если условие сработало — обновляем статус
+        if entered:
+            logger.info(f'Сделка открыта: {position.symbol_name} ({position.side.upper()}) '
+                        f'по цене {price}, UUID={position.uuid}')
+            try:
                 result = await api_change_status_position(
                     uuid=position.uuid,
                     status='completed',
-                    kline_ms=str(kline.data.data.ts)
+                    kline_ms=ts
                 )
-                return result
-            return False
-        if position.side == 'sell':
-            if float(position.price) >= kline.data.data.h:
-                logger.info(f'Сделка открыта: {position}')
-                result = await api_change_status_position(
-                    uuid=position.uuid,
-                    status='completed',
-                    kline_ms=str(kline.data.data.ts)
-                )
-                return result
-            return False
+                return bool(result)
+            except Exception as e:
+                logger.error(f'Ошибка при обновлении статуса позиции {position.uuid}: {e}')
+                return False
+
+        # Не достигли цены — продолжаем мониторинг
         return False
 
     async def _add_new_option_position(self, position: PositionSchema, kline: KlineUpdate):

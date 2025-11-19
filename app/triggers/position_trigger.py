@@ -3,6 +3,7 @@ import logging
 
 from app.services.position.router import PositionRouter
 from app.triggers.base_trigger import BaseTrigger
+from conf.conf_redis import redis_server_data
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class PositionTrigger(BaseTrigger):
                 break
             msg = item["msg"]
             body = item["body"]
+
             if isinstance(body, str):
                 try:
                     body = json.loads(body)
@@ -44,6 +46,18 @@ class PositionTrigger(BaseTrigger):
             if result:
                 logger.info(f"[Trigger:Position] ✅ Удаляю {body.get('uuid')}")
                 await self.handler.remove_message(item)
+                await redis_server_data.publish(
+                    'MONITORING',
+                    json.dumps(
+                        {
+                            'id': body.get('id'),
+                            'type': 'position',
+                            'method': 'delete',
+                        }
+                    )
+                )
+                await redis_server_data.delete(body.get('id'))
+
             else:
                 logger.info(f"[Trigger:Position] ⏳ Ещё не готово → в конец {body.get('uuid')}")
                 await self.handler.requeue_message(item)

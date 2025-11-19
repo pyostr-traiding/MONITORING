@@ -3,6 +3,7 @@ import logging
 
 from app.services.order.router import OrderRouter
 from app.triggers.base_trigger import BaseTrigger
+from conf.conf_redis import redis_server_data
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,19 @@ class OrderTrigger(BaseTrigger):
             if result:
                 logger.info(f"[Trigger:Order] ✅ Удаляю {body.get('uuid')}")
                 await self.handler.remove_message(item)
+
+                await redis_server_data.publish(
+                    'MONITORING',
+                    json.dumps(
+                        {
+                            'id': body.get('id'),
+                            'type': 'order',
+                            'method': 'delete',
+                        }
+                    )
+                )
+                await redis_server_data.delete(body.get('id'))
+
             else:
                 logger.info(f"[Trigger:Order] ⏳ Ещё не готово → в конец {body.get('uuid')}")
                 await self.handler.requeue_message(item)

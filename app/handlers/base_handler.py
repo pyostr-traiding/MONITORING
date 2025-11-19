@@ -63,5 +63,6 @@ class BaseHandler:
         async with self.lock:
             try:
                 self.messages.remove(item)
+
             except ValueError:
                 pass

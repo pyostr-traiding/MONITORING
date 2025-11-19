@@ -56,7 +56,7 @@ class OrderTrigger(BaseTrigger):
                         }
                     )
                 )
-                await redis_server_data.delete(body.get('id'))
+                await redis_server_data.delete('order:' + str(body.get('id')))
 
             else:
                 logger.info(f"[Trigger:Order] ⏳ Ещё не готово → в конец {body.get('uuid')}")

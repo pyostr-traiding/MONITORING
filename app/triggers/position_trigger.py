@@ -56,7 +56,7 @@ class PositionTrigger(BaseTrigger):
                         }
                     )
                 )
-                await redis_server_data.delete(body.get('id'))
+                await redis_server_data.delete('position:' + str(body.get('id')))
 
             else:
                 logger.info(f"[Trigger:Position] ⏳ Ещё не готово → в конец {body.get('uuid')}")

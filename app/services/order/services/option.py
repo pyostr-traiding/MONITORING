@@ -96,12 +96,20 @@ class OptionOrderService(BaseOrderService):
         current_price = Decimal(kline.data.data.c)
         if order.side == 'buy':
             if current_price >= Decimal(order.target_rate):
-                result = await api_close_order(uuid=order.uuid, rate=current_price)
+                result = await api_close_order(
+                    uuid=order.uuid,
+                    rate=current_price,
+                    kline_ms=kline.data.data.ts,
+                )
                 return result
             return False
         if order.side == 'sell':
             if current_price <=  Decimal(order.target_rate):
-                result = await api_close_order(uuid=order.uuid, rate=current_price)
+                result = await api_close_order(
+                    uuid=order.uuid,
+                    rate=current_price,
+                    kline_ms=kline.data.data.ts,
+                )
                 return result
             return False
 

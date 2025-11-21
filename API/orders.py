@@ -99,6 +99,7 @@ async def api_change_status_order(
 async def api_close_order(
         uuid: str,
         rate: Decimal,
+        kline_ms: int
 
 ) -> Union[bool, None]:
     """
@@ -110,6 +111,7 @@ async def api_close_order(
     data = {
         'uuid': uuid,
         'rate': str(rate),
+        'kline_ms': kline_ms,
     }
     url = f"{API_BASE_URL}/order/close"
     async with aiohttp.ClientSession() as session:

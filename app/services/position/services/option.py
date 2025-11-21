@@ -1,6 +1,7 @@
 # ==============================================================
 # ФЬЮЧЕРСЫ / ОПЦИОНЫ
 # ==============================================================
+import datetime
 import logging
 from typing import Union
 
@@ -9,14 +10,52 @@ from API.schemas.position import PositionSchema
 
 from app.schemas.kline import KlineUpdate
 from app.services.position.services.position_service import BasePositionService
+from conf.conf_redis import redis_server_settings
+
+from cachetools import TTLCache, cached
+
 
 logger = logging.getLogger(__name__)
 
+cache_life_time_value = TTLCache(maxsize=100, ttl=5)
+
+@cached(cache=cache_life_time_value)
+def get_cached_life_time_value() -> int:
+    time = redis_server_settings.get('settings:position-lifetime-seconds')
+    if not time:
+        return 5
+    else:
+        return int(time)
+
+async def dt_lifetime_position_expire(position: PositionSchema) -> bool:
+    # created_at приходит в формате ISO: "2025-11-21T05:19:13.852Z"
+    created_str: str = position.created_at
+    # Парсим дату
+    created_dt = datetime.datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+    # Берём TTL в секундах (например, 60)
+    ttl_seconds = get_cached_life_time_value()
+    # Время истечения
+    expires_at = created_dt + datetime.timedelta(seconds=ttl_seconds)
+    # Текущее время
+    now = datetime.datetime.now(datetime.UTC)
+    # Если текущее время >= истечения — просрочено
+    if now >= expires_at:
+        return True
+    return False
 
 class OptionPositionService(BasePositionService):
     async def _handle_option(self, position: PositionSchema, kline: KlineUpdate) -> bool:
         current_price = float(kline.data.data.c)
-        if not await self.has_position(position.id):  # <--- await
+        if await dt_lifetime_position_expire(position):
+            result_accept = await api_change_status_position(
+                uuid=position.uuid,
+                status='cancel'
+            )
+            print(result_accept)
+            if not result_accept:
+                return False
+            return True
+        if not await self.has_position(position.id):
             api_position = await api_get_position(uuid=position.uuid)
             if api_position is None:
                 return False

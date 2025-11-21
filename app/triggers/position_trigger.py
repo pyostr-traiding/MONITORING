@@ -16,6 +16,21 @@ class PositionTrigger(BaseTrigger):
         super().__init__(handler)
         self.service = PositionRouter()
 
+    async def delete(self, _id, item):
+        await self.handler.remove_message(item)
+        await redis_server_data.publish(
+            'MONITORING',
+            json.dumps(
+                {
+                    'id': _id,
+                    'type': 'position',
+                    'method': 'delete',
+                }
+            )
+        )
+        await redis_server_data.delete('position:' + str(_id))
+
+
     async def handle(self, trigger_data):
         if not self.handler.messages:
             logger.info("[Trigger:Position] Очередь пуста")
@@ -45,18 +60,7 @@ class PositionTrigger(BaseTrigger):
 
             if result:
                 logger.info(f"[Trigger:Position] ✅ Удаляю {body.get('uuid')}")
-                await self.handler.remove_message(item)
-                await redis_server_data.publish(
-                    'MONITORING',
-                    json.dumps(
-                        {
-                            'id': body.get('id'),
-                            'type': 'position',
-                            'method': 'delete',
-                        }
-                    )
-                )
-                await redis_server_data.delete('position:' + str(body.get('id')))
+                await self.delete(body.get('id'), item)
 
             else:
                 logger.info(f"[Trigger:Position] ⏳ Ещё не готово → в конец {body.get('uuid')}")

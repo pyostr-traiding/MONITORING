@@ -4,8 +4,7 @@ from datetime import datetime, UTC
 
 from API.schemas.position import PositionSchema
 from app.schemas.kline import KlineUpdate
-from conf.conf_redis import redis_server_data
-from conf.config import redis_server
+from conf.conf_redis import redis_server_data, redis_server
 
 
 class BasePositionService:

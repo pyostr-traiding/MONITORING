@@ -1,13 +1,12 @@
-import asyncio
 import logging
+import aiohttp
+
 from decimal import Decimal
 from typing import Literal, Union
-
-import aiohttp
 from dotenv import load_dotenv
 
 from API.schemas.order import OrderSchema
-from conf.config import API_BASE_URL, DEFAULT_TIMEOUT, BASE_HEADERS
+from conf.config import DEFAULT_TIMEOUT, BASE_HEADERS, settings
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +20,7 @@ async def api_get_order(
     params = {
         'uuid': uuid,
     }
-    url = f"{API_BASE_URL}/order/"
+    url = f"{settings.API_BASE_URL}/order/"
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 url=url,
@@ -40,7 +39,7 @@ async def api_get_order(
 
 async def api_get_list_orders() -> list[dict]:
     """Запрашивает список открытых ордеров с API"""
-    url = f"{API_BASE_URL}/order/ListOpen"
+    url = f"{settings.API_BASE_URL}/order/ListOpen"
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(
@@ -77,7 +76,7 @@ async def api_change_status_order(
         'uuid': uuid,
         'status': status,
     }
-    url = f"{API_BASE_URL}/order/changeStatus"
+    url = f"{settings.API_BASE_URL}/order/changeStatus"
     async with aiohttp.ClientSession() as session:
         async with session.post(
                 url,
@@ -113,7 +112,7 @@ async def api_close_order(
         'rate': str(rate),
         'kline_ms': kline_ms,
     }
-    url = f"{API_BASE_URL}/order/close"
+    url = f"{settings.API_BASE_URL}/order/close"
     async with aiohttp.ClientSession() as session:
         async with session.post(
                 url,

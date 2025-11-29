@@ -55,11 +55,10 @@ jobs:
               exit 1
             fi
 
-            # Установка .env файла
-            if ! echo "${{ secrets.ENV_FILE }}" > .env; then
-              echo "Ошибка при установке .env файла"
-              exit 1
-            fi
+            echo "===== Создание файла .env ====="
+            echo "INFISICAL_HOST=${{ secrets.INFISICAL_HOST }}" | sudo tee .env
+            echo "INFISICAL_TOKEN=${{ secrets.INFISICAL_TOKEN }}" | sudo tee -a .env
+            echo "ENVIRONMENT_SLUG=${{ secrets.ENVIRONMENT_SLUG }}" | sudo tee -a .env
 
             # Попытка запуска docker-compose
             if ! docker compose up --build -d; then

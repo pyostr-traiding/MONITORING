@@ -2,12 +2,15 @@
 import logging
 import sys
 import asyncio
-from conf.config import RABBITMQ_URL, REDIS_CONFIG, REDIS_CHANNELS, API_BASE_URL
+
 from app.core.rabbitmq_consumer import RabbitMQConsumer
 from app.core.redis_listener import RedisListener
 from app.core.registry import load_handlers, load_triggers
 from app.core.initializer import InitialDataLoader
+
 from conf.logg import setup_logging
+from conf.config import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -44,12 +47,12 @@ async def main():
     logger.info(f"[Init] Найдено обработчиков: {len(handlers)}")
 
     # === 2. Первичная загрузка ===
-    loader = InitialDataLoader(API_BASE_URL, handlers)
+    loader = InitialDataLoader(settings.API_BASE_URL, handlers)
     await loader.load_all()
     logger.info("[Init] Первичная загрузка данных завершена")
 
     # === 3. Инициализация RabbitMQ ===
-    rabbit = RabbitMQConsumer(RABBITMQ_URL)
+    rabbit = RabbitMQConsumer(settings.RABBITMQ_URL)
     await rabbit.connect()
 
     for handler in handlers:
@@ -59,7 +62,7 @@ async def main():
     await rabbit.start([h.queue_name for h in handlers if h.queue_name])
 
     # === 4. Redis Listener ===
-    redis_listener = RedisListener(REDIS_CONFIG, REDIS_CHANNELS, handlers)
+    redis_listener = RedisListener(settings.REDIS_CONFIG, settings.REDIS_CHANNELS, handlers)
     bindings = []
     active_triggers = []  # 🧩 сюда положим все триггеры (даже временные)
 

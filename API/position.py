@@ -5,7 +5,7 @@ import aiohttp
 from typing import Union, Literal
 
 from API.schemas.position import PositionSchema
-from conf.config import DEFAULT_TIMEOUT, API_BASE_URL, BASE_HEADERS
+from conf.config import DEFAULT_TIMEOUT, BASE_HEADERS, settings
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ async def api_get_position(
     params = {
         'uuid': uuid,
     }
-    url = f"{API_BASE_URL}/position/"
+    url = f"{settings.API_BASE_URL}/position/"
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 url=url,
@@ -40,8 +40,7 @@ async def api_get_list_positions() -> list[dict]:
     """
     Запрашивает список открытых ордеров с API
     """
-    url = f"{API_BASE_URL}/position/ListOpen"
-    print(url)
+    url = f"{settings.API_BASE_URL}/position/ListOpen"
     async with aiohttp.ClientSession() as session:
         async with session.get(
                 url,
@@ -75,7 +74,7 @@ async def api_change_status_position(
         'status': status,
         'kline_ms': kline_ms,
     }
-    url = f"{API_BASE_URL}/position/changeStatus"
+    url = f"{settings.API_BASE_URL}/position/changeStatus"
     async with aiohttp.ClientSession() as session:
         async with session.post(
                 url,
